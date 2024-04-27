@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"></script>
+  <link href="https://fonts.cdnfonts.com/css/go" rel="stylesheet">
+  <title>TurboRPC: Run Fast, Move Fast, Beak Nothing</title>
+  <style>
+    body {
+      font-family: 'Go', sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <section style="text-align: center;">
+    <a href="https://github.com/turborpc/turborpc">
+      <img src="logo.png">
+    </a>
+    <p>
+      Combination of <a href="https://trpc.io">tRPC</a> and <a href="https://pkg.go.dev/net/rpc">net/rpc</a>. Run Fast,
+      Move Fast,
+      Break Nothing.
+    </p>
+    <a href="https://github.com/turborpc/turborpc">
+      <img src="demo.gif">
+    </a>
+  </section>
+  <section>
+    <p>
+      Write Go methods, get a type safe client for your frontend.
+    </p>
+
+    <p>Services are just Go objects with methods on the form <code class="language-go">func (s Service) Method(ctx context.Context, input Input)
+      (Output, error)</code>.</p>
+
+    <p>
+      <a href="https://github.com/turborpc/turborpc">Github repository</a>
+    </p>
+  </section>
+  <section>
+    <h2>Example</h2>
+    <pre><code class="language-go">package main
+
+import (
+    &quot;context&quot;
+    &quot;net/http&quot;
+    &quot;sync/atomic&quot;
+
+    &quot;github.com/turborpc/turborpc&quot;
+)
+
+type Counter atomic.Int64
+
+func (c *Counter) Add(ctx context.Context, delta int64) (int64, error) {
+    return (*atomic.Int64)(c).Add(delta), nil
+}
+
+func main() {
+    rpc := turborpc.NewServer(turborpc.WithServerJavaScriptClient())
+
+    _ = rpc.Register(&amp;Counter{})
+
+    http.Handle(&quot;/rpc&quot;, rpc)
+
+    http.HandleFunc(&quot;/&quot;, func(w http.ResponseWriter, r *http.Request) {
+        w.Write([]byte(`
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;Counter&lt;/title&gt;
+  &lt;script src=&quot;/rpc&quot;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;strong id=&quot;count&quot;&gt;&lt;/strong&gt;
+  &lt;button id=&quot;plus&quot;&gt;+&lt;/button&gt;
+  &lt;button id=&quot;minus&quot;&gt;-&lt;/button&gt;
+  &lt;script&gt;
+    const rpc = new Counter(&quot;/rpc&quot;);
+
+    const setCount = (v) =&gt; document.getElementById(&quot;count&quot;).innerText = v;
+    document.getElementById(&quot;plus&quot;).onclick = () =&gt; rpc.add(1).then(setCount);
+    document.getElementById(&quot;minus&quot;).onclick = () =&gt; rpc.add(-1).then(setCount);
+
+    rpc.add(0).then(setCount);
+  &lt;/script&gt;
+&lt;/body&gt;
+        `))
+    })
+
+    http.ListenAndServe(&quot;:3000&quot;, nil)
+}</code></pre>
+  </section>
+  <section>
+    <h2><a href="https://github.com/turborpc/examples">More examples</a></h2>
+  </section>
+  <script>hljs.highlightAll();</script>
+</body>
+
+</html>
